@@ -40,7 +40,7 @@ services:
 networks:
   internal:
     name: internal
-    external: true  
+    driver: bridge
 
 volumes:
   mariadb_data:
