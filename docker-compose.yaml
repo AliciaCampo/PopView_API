@@ -35,7 +35,7 @@ services:
     networks:
       - internal
     volumes:
-      - ./API/ssl  
+      - ./API/ssl:/app/ssl 
 
 networks:
   internal:
