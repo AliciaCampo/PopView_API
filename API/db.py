@@ -4,9 +4,9 @@ from mysql.connector import pooling
 # Configura la connexió a MariaDB
 db_config = {
     'host': 'mariadb',
-    'user': 'david',
-    'password': '1357924680',
-    'database': 'reserves',
+    'user': 'popview',
+    'password': 'pirineus',
+    'database': 'popview',
     'collation': 'utf8mb4_general_ci'
 }
 
