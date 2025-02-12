@@ -1,7 +1,12 @@
 from fastapi import FastAPI, HTTPException
 
 import mysql.connector
-from models import UsuariCreate, Usuari, LlistaCreate, Llista, TitolCreate, Titol
+from models import UsuariCreate
+from models import Usuari
+from models import LlistaCreate
+from models import Llista
+from models import TitolCreate
+from models import Titol
 from db import get_db_connection
 
 app = FastAPI()
