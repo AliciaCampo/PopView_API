@@ -32,8 +32,8 @@ services:
       - mariadb
     networks:
       - internal
-    volumes:
-      - ./API/ssl:/app/ssl
+    #volumes:
+    #  - ./API/ssl:/app/ssl
 
 networks:
   internal:
