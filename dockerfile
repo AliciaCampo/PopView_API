@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
 # Exposa el port per HTTPS
-EXPOSE 443
+EXPOSE 8443
 
 WORKDIR /app
 
