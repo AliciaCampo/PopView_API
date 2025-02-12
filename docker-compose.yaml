@@ -8,6 +8,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: pirineus
       MYSQL_DATABASE: pop_view
+      MYSQL_USER: popview
+      MYSQL_PASSWORD: pirineus
     ports:
       - "3306:3306"
     networks:
