@@ -1,18 +1,27 @@
 version: '3.8'
 
 services:
-  app:
+  pop_view:
     build:
-     context: .
-    container_name: reservesapi
+      context: .
+    container_name: pop_view
     restart: unless-stopped
     ports:
-      - "3306:3306"  # HTTPS
+      - "443:8443"
     environment:
       - PORT=8443
+      - DB_HOST=mariadb
+      - DB_USER=root
+      - DB_PASSWORD=pirineus
+      - DB_NAME=pop_view
+    depends_on:
+      - mariadb
     networks:
       - internal
+    volumes:
+      - ./ssl:/app/ssl
+
 networks:
   internal:
-    name: internal
     external: true
+
