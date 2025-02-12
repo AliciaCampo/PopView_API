@@ -37,8 +37,8 @@ services:
 
 networks:
   internal:
-    driver: bridge  # Utiliza un controlador de red por defecto
+    driver: bridge  
 
 volumes:
   mariadb_data:
-    driver: local  # Asegúrate de que el volumen se crea localmente, no con un volumen externo
+    driver: local  
