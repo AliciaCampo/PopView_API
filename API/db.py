@@ -6,7 +6,7 @@ db_config = {
     'host': 'mariadb',
     'user': 'popview',
     'password': 'pirineus',
-    'database': 'popview',
+    'database': 'pop_view',
     'collation': 'utf8mb4_general_ci'
 }
 
