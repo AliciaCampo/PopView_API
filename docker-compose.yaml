@@ -17,7 +17,7 @@ services:
 
   pop_view:
     build:
-      context: .
+      context: ./API  
     container_name: pop_view
     restart: unless-stopped
     ports:
@@ -37,7 +37,8 @@ services:
 
 networks:
   internal:
-    external: true
+    driver: bridge  # Utiliza un controlador de red por defecto
 
 volumes:
   mariadb_data:
+    driver: local  # Asegúrate de que el volumen se crea localmente, no con un volumen externo
