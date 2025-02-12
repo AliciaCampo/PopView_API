@@ -1,13 +1,27 @@
 version: '3.8'
 
 services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: pirineus
+      MYSQL_DATABASE: pop_view
+    ports:
+      - "3306:3306"
+    networks:
+      - internal
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
   pop_view:
     build:
       context: .
     container_name: pop_view
     restart: unless-stopped
     ports:
-      - "8443:8443"
+      - "443:8443"
     environment:
       - PORT=8443
       - DB_HOST=mariadb
@@ -19,9 +33,11 @@ services:
     networks:
       - internal
     volumes:
-      - ./ssl:/app/ssl
+      - ./API/ssl:/app/ssl
 
 networks:
   internal:
     external: true
 
+volumes:
+  mariadb_data:
