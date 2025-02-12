@@ -11,7 +11,7 @@ services:
       MYSQL_USER: popview
       MYSQL_PASSWORD: pirineus
     ports:
-      - "80:80"
+      - "3306:3306"
     networks:
       - internal
     volumes:
