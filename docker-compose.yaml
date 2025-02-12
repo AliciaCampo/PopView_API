@@ -10,16 +10,18 @@ services:
       MYSQL_DATABASE: pop_view
     ports:
       - "3306:3306"
+    networks:
+      - internal
     volumes:
       - mariadb_data:/var/lib/mysql
 
   pop_view:
     build:
-      context: .
+      context: ./API
     container_name: pop_view
     restart: unless-stopped
     ports:
-      - "8443:8443"
+      - "8443:8443"  
     environment:
       - PORT=8443
       - DB_HOST=mariadb
@@ -28,8 +30,16 @@ services:
       - DB_NAME=pop_view
     depends_on:
       - mariadb
+    networks:
+      - internal
     volumes:
-      - ./API/ssl:/app/ssl
+      - ./API/ssl  
+
+networks:
+  internal:
+    name: internal
+    external: true  
 
 volumes:
   mariadb_data:
+    driver: local  
