@@ -4,6 +4,7 @@ from typing import Optional, List
 from datetime import date
 
 class Usuari(BaseModel):
+    id: int
     nom: str
     imatge: Optional[str] = None
     edat: int
