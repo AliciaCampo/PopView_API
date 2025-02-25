@@ -31,9 +31,10 @@ class Titol(BaseModel):
     nom: str
     descripcio: Optional[str] = None
     plataformes: str
-    es_peli: bool
     rating: float
     comentaris: Optional[str] = None
+    genero: str
+    edadRecomendada: int
 class TitolCreate(BaseModel):
     imatge: Optional[str] = None
     nom: str

@@ -134,8 +134,8 @@ def crear_titol(titol: TitolCreate):
     try:
         db = get_db_connection()
         cursor = db.cursor()
-        cursor.execute("INSERT INTO titol (imatge, nom, descripcio, plataformes, es_peli, rating, comentaris) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                       (titol.imatge, titol.nom, titol.descripcio, titol.plataformes, titol.es_peli, titol.rating, titol.comentaris))
+        cursor.execute("INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, comentaris, genero, edadRecomendada) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                       (titol.imatge, titol.nom, titol.descripcio, titol.plataformes, titol.rating, titol.comentaris, titol.genero, titol.edadRecomendada))
         db.commit()
         titol_id = cursor.lastrowid
         return {"id": titol_id, **titol.dict()}
