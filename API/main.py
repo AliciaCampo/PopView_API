@@ -128,7 +128,6 @@ def eliminar_llista(llista_id: int):
         cursor.close()
         db.close()
 
-# CRUD Titol
 @app.post("/titols/", response_model=Titol)
 def crear_titol(titol: TitolCreate):
     try:
@@ -162,7 +161,7 @@ def crear_titol(titol: TitolCreate):
         if db:
             db.close()
 
-
+# Obtener un título específico por su ID
 @app.get("/titols/{titol_id}", response_model=Titol)
 def obtenir_titol(titol_id: int):
     try:
@@ -170,18 +169,14 @@ def obtenir_titol(titol_id: int):
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM titol WHERE id = %s", (titol_id,))
         titol = cursor.fetchone()
-        
-        if not titol:
-            raise HTTPException(status_code=404, detail="Títol no trobat")
-        
+        if titol is None:
+            raise HTTPException(status_code=404, detail="Título no encontrado")
         return titol
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir títol: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener el título: {str(e)}")
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        cursor.close()
+        db.close()
 
 @app.get("/titols/", response_model=List[Titol])
 def obtenir_tots_els_titols():
@@ -190,18 +185,12 @@ def obtenir_tots_els_titols():
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM titol")
         titols = cursor.fetchall()
-
-        if not titols:
-            return []
-
         return titols
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir títols: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener los títulos: {str(e)}")
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        cursor.close()
+        db.close()
 
 @app.delete("/titols/{titol_id}")
 def eliminar_titol(titol_id: int):
