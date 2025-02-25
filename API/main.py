@@ -1,141 +1,181 @@
-from fastapi import FastAPI, HTTPException, Depends
-import logging
-import bcrypt
-from mysql.connector import connect, Error
+from fastapi import FastAPI, HTTPException
+import mysql.connector
 from models import UsuariCreate, Usuari, LlistaCreate, Llista, TitolCreate, Titol
 from db import get_db_connection
-from typing import List
+from typing import List, Optional
 
 app = FastAPI()
 
-def get_db():
-    """Gestiona automàticament la connexió a la BD amb 'yield'"""
-    db = get_db_connection()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Funció per encriptar contrasenyes
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-#Funció per verificar contrasenyes
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
-
-#CRUD Usuari
+# CRUD Usuari
 @app.post("/usuaris/", response_model=Usuari)
-def crear_usuari(usuari: UsuariCreate, db=Depends(get_db)):
+def crear_usuari(usuari: UsuariCreate):
+    db = None
+    cursor = None
     try:
+        db = get_db_connection()
         cursor = db.cursor()
-
-        #Hashejar la contrasenya abans d'emmagatzemar-la
-        hashed_password = hash_password(usuari.contrasenya)
-
-        query = """INSERT INTO usuari (nom, imatge, edat, correu, contrasenya) 
-                   VALUES (%s, %s, %s, %s, %s)"""
-        cursor.execute(query, (usuari.nom, usuari.imatge, usuari.edat, usuari.correu, hashed_password))
+        cursor.execute("INSERT INTO usuari (nom, imatge, edat, correu, contrasenya) VALUES (%s, %s, %s, %s, %s)",
+                       (usuari.nom, usuari.imatge or None, usuari.edat, usuari.correu, usuari.contrasenya))
         db.commit()
         user_id = cursor.lastrowid
-        return {"id": user_id, **usuari.model_dump(exclude={"contrasenya"})}  # No retornem la contrasenya!
-    
-    except Error as e:
-        logging.error(f"Error al crear usuari: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error al crear usuari")
-    
+        return {"id": user_id, **usuari.dict()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear usuari: {str(e)}")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
 @app.get("/usuaris/{usuari_id}", response_model=Usuari)
-def obtenir_usuari(usuari_id: int, db=Depends(get_db)):
+def obtenir_usuari(usuari_id: int):
+    db = None
+    cursor = None
     try:
+        db = get_db_connection()
         cursor = db.cursor(dictionary=True)
-        cursor.execute("SELECT id, nom, imatge, edat, correu FROM usuari WHERE id = %s", (usuari_id,))
+        cursor.execute("SELECT * FROM usuari WHERE id = %s", (usuari_id,))
         usuari = cursor.fetchone()
-        if not usuari:
+        if usuari is None:
             raise HTTPException(status_code=404, detail="Usuari no trobat")
         return usuari
-    except Error as e:
-        logging.error(f"Error al obtenir usuari: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error al obtenir usuari")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtenir usuari: {str(e)}")
     finally:
-        cursor.close()
-
-@app.get("/usuaris/", response_model=List[Usuari])
-def obtenir_tots_els_usuaris(db=Depends(get_db)):
-    try:
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("SELECT id, nom, imatge, edat, correu FROM usuari")
-        return cursor.fetchall()
-    except Error as e:
-        logging.error(f"Error al obtenir usuaris: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error al obtenir usuaris")
-    finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
 @app.delete("/usuaris/{usuari_id}")
-def eliminar_usuari(usuari_id: int, db=Depends(get_db)):
+def eliminar_usuari(usuari_id: int):
+    db = None
+    cursor = None
     try:
+        db = get_db_connection()
         cursor = db.cursor()
         cursor.execute("DELETE FROM usuari WHERE id = %s", (usuari_id,))
         db.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Usuari no trobat")
         return {"message": "Usuari eliminat"}
-    except Error as e:
-        logging.error(f"Error al eliminar usuari: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error al eliminar usuari")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar usuari: {str(e)}")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
-#CRUD Llista
+# CRUD Llista
 @app.post("/llistes/", response_model=Llista)
-def crear_llista(llista: LlistaCreate, db=Depends(get_db)):
+def crear_llista(llista: LlistaCreate):
+    db = None
+    cursor = None
     try:
+        db = get_db_connection()
         cursor = db.cursor()
-        query = "INSERT INTO llista (titol, descripcio, privada) VALUES (%s, %s, %s)"
-        cursor.execute(query, (llista.titol, llista.descripcio, llista.privada))
+        cursor.execute("INSERT INTO llista (titol, descripcio, privada) VALUES (%s, %s, %s)",
+                       (llista.titol, llista.descripcio or None, llista.privada))
         db.commit()
-        return {"id": cursor.lastrowid, **llista.model_dump()}
-    except Error as e:
-        logging.error(f"Error al crear llista: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error al crear llista")
+        llista_id = cursor.lastrowid
+        return {"id": llista_id, **llista.dict()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear llista: {str(e)}")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
-#CRUD Títol
-@app.post("/titols/", response_model=Titol)
-def crear_titol(titol: TitolCreate, db=Depends(get_db)):
+@app.delete("/llistes/{llista_id}")
+def eliminar_llista(llista_id: int):
+    db = None
+    cursor = None
     try:
+        db = get_db_connection()
         cursor = db.cursor()
-        query = """INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, genero, edadRecomendada) 
-                   VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-        cursor.execute(query, (
-            titol.imatge, titol.nom, titol.descripcio, 
-            titol.plataformes, titol.rating, titol.genero, titol.edadRecomendada
+        cursor.execute("DELETE FROM llista WHERE id = %s", (llista_id,))
+        db.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Llista no trobada")
+        return {"message": "Llista eliminada"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar llista: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
+
+# CRUD Titol
+@app.post("/titols/", response_model=Titol)
+def crear_titol(titol: TitolCreate):
+    db = None
+    cursor = None
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, comentaris, genero, edadRecomendada) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            titol.imatge or None, 
+            titol.nom, 
+            titol.descripcio or None, 
+            titol.plataformes, 
+            titol.rating, 
+            titol.comentaris or None, 
+            titol.genero, 
+            titol.edadRecomendada
         ))
         db.commit()
-        return {"id": cursor.lastrowid, **titol.model_dump()}
-    except Error as e:
-        logging.error(f"Error al crear títol: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error al crear títol")
+        titol_id = cursor.lastrowid
+        return {"id": titol_id, **titol.dict()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear títol: {str(e)}")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
-#DELETE Títol de Llista
-@app.delete("/llistes/{llista_id}/titols/{titol_id}")
-def eliminar_titol_de_llista(llista_id: int, titol_id: int, db=Depends(get_db)):
+@app.delete("/titols/{titol_id}")
+def eliminar_titol(titol_id: int):
+    db = None
+    cursor = None
     try:
+        db = get_db_connection()
         cursor = db.cursor()
-        query = "DELETE FROM llista_titols WHERE llista_id = %s AND titol_id = %s"
-        cursor.execute(query, (llista_id, titol_id))
+        cursor.execute("DELETE FROM titol WHERE id = %s", (titol_id,))
+        db.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Títol no trobat")
+        return {"message": "Títol eliminat"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar títol: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
+
+@app.delete("/llistes/{llista_id}/titols/{titol_id}")
+def eliminar_titol_de_llista(llista_id: int, titol_id: int):
+    db = None
+    cursor = None
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("DELETE FROM llista_titols WHERE llista_id = %s AND titol_id = %s", (llista_id, titol_id))
         db.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Relació no trobada entre la llista i el títol")
         return {"message": "Títol eliminat de la llista"}
-    except Error as e:
-        logging.error(f"Error al eliminar títol de la llista: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error al eliminar títol de la llista")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar títol de la llista: {str(e)}")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
