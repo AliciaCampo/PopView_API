@@ -157,8 +157,10 @@ def crear_titol(titol: TitolCreate):
         raise HTTPException(status_code=500, detail=f"Error al crear títol: {str(e)}")
     
     finally:
-        cursor.close()
-        db.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
 
 @app.get("/titols/{titol_id}", response_model=Titol)
@@ -168,14 +170,18 @@ def obtenir_titol(titol_id: int):
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM titol WHERE id = %s", (titol_id,))
         titol = cursor.fetchone()
-        if titol is None:
+        
+        if not titol:
             raise HTTPException(status_code=404, detail="Títol no trobat")
+        
         return titol
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtenir títol: {str(e)}")
     finally:
-        cursor.close()
-        db.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
 @app.get("/titols/", response_model=List[Titol])
 def obtenir_tots_els_titols():
@@ -184,12 +190,18 @@ def obtenir_tots_els_titols():
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM titol")
         titols = cursor.fetchall()
+
+        if not titols:
+            return []
+
         return titols
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtenir títols: {str(e)}")
     finally:
-        cursor.close()
-        db.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
 @app.delete("/titols/{titol_id}")
 def eliminar_titol(titol_id: int):
@@ -198,26 +210,18 @@ def eliminar_titol(titol_id: int):
         cursor = db.cursor()
         cursor.execute("DELETE FROM titol WHERE id = %s", (titol_id,))
         db.commit()
-        return {"message": "Títol eliminat"}
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Títol no trobat")
+
+        return {"message": "Títol eliminat correctament"}
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al eliminar títol: {str(e)}")
+    
     finally:
-        cursor.close()
-        db.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
-# DELETE Títol de Llista (afegit)
-@app.delete("/llistes/{llista_id}/titols/{titol_id}")
-def eliminar_titol_de_llista(llista_id: int, titol_id: int):
-    try:
-        db = get_db_connection()
-        cursor = db.cursor()
-        cursor.execute("DELETE FROM llista_titols WHERE llista_id = %s AND titol_id = %s", (llista_id, titol_id))
-        db.commit()
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Relació no trobada entre la llista i el títol")
-        return {"message": "Títol eliminat de la llista"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar títol de la llista: {str(e)}")
-    finally:
-        cursor.close()
-        db.close()
