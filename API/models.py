@@ -33,8 +33,8 @@ class Titol(BaseModel):
     plataformes: str
     rating: float
     comentaris: Optional[str] = None
-    genero: str
-    edadRecomendada: int
+    genero: Optional[str] = None
+    edadRecomendada: Optional[int] = None
 class TitolCreate(BaseModel):
     imatge: Optional[str] = None
     nom: str
