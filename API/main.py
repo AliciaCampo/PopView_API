@@ -145,8 +145,8 @@ def crear_titol(titol: TitolCreate):
             titol.plataformes, 
             titol.rating, 
             titol.comentaris or None, 
-            titol.genero, 
-            titol.edadRecomendada
+            titol.genero or None,
+            titol.edadRecomendada or None
         ))
 
         db.commit()
