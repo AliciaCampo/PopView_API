@@ -18,6 +18,7 @@ class UsuariCreate(BaseModel):
     correu: str
     contrasenya: str 
 class Llista(BaseModel):
+    id: int
     titol: str
     descripcio: Optional[str] = None
     privada: bool
@@ -27,18 +28,21 @@ class LlistaCreate(BaseModel):
     descripcio: Optional[str] = None
     privada: bool  # No incluye `titols` al momento de crear
 class Titol(BaseModel):
+    id: int
     imatge: Optional[str] = None
     nom: str
     descripcio: Optional[str] = None
     plataformes: str
     rating: float
     comentaris: Optional[str] = None
-    genero: str
-    edadRecomendada: int
+    genero: Optional[str] = None
+    edadRecomendada: Optional[int] = None
 class TitolCreate(BaseModel):
     imatge: Optional[str] = None
     nom: str
     descripcio: Optional[str] = None
     plataformes: str
-    es_peli: bool
     rating: float
+    comentaris: Optional[str] = None
+    genero: Optional[str] = None
+    edadRecomendada: Optional[int] = None

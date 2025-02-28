@@ -115,14 +115,30 @@ def crear_titol(titol: TitolCreate):
     try:
         db = get_db_connection()
         cursor = db.cursor()
-        cursor.execute("INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, comentaris, genero, edadRecomendada) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                       (titol.imatge, titol.nom, titol.descripcio, titol.plataformes, titol.rating, titol.comentaris, titol.genero, titol.edadRecomendada))
+
+        cursor.execute("""
+            INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, comentaris, genero, edadRecomendada) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            titol.imatge or None, 
+            titol.nom, 
+            titol.descripcio or None, 
+            titol.plataformes, 
+            titol.rating, 
+            titol.comentaris or None, 
+            titol.genero or None,
+            titol.edadRecomendada or None
+        ))
+
         db.commit()
         return {"id": cursor.lastrowid, **titol.dict()}
     finally:
-        cursor.close()
-        db.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
+# Obtener un título específico por su ID
 @app.get("/titols/{titol_id}", response_model=Titol)
 def obtenir_titol(titol_id: int):
     try:
@@ -172,5 +188,8 @@ def eliminar_titol_de_llista(llista_id: int, titol_id: int):
             raise HTTPException(status_code=404, detail="Relació no trobada")
         return {"message": "Títol eliminat de la llista"}
     finally:
-        cursor.close()
-        db.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
+
