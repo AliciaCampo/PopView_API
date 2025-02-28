@@ -6,7 +6,7 @@ from typing import List
 
 app = FastAPI()
 
-# CRUD Usuari
+# ---------------- CRUD USUARI ----------------
 @app.post("/usuaris/", response_model=Usuari)
 def crear_usuari(usuari: UsuariCreate):
     try:
@@ -17,8 +17,6 @@ def crear_usuari(usuari: UsuariCreate):
         db.commit()
         user_id = cursor.lastrowid
         return {"id": user_id, **usuari.dict()}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear usuari: {str(e)}")
     finally:
         cursor.close()
         db.close()
@@ -30,11 +28,9 @@ def obtenir_usuari(usuari_id: int):
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM usuari WHERE id = %s", (usuari_id,))
         usuari = cursor.fetchone()
-        if usuari is None:
+        if not usuari:
             raise HTTPException(status_code=404, detail="Usuari no trobat")
         return usuari
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir usuari: {str(e)}")
     finally:
         cursor.close()
         db.close()
@@ -45,10 +41,7 @@ def obtenir_tots_els_usuaris():
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM usuari")
-        usuaris = cursor.fetchall()
-        return usuaris
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir usuaris: {str(e)}")
+        return cursor.fetchall()
     finally:
         cursor.close()
         db.close()
@@ -61,25 +54,20 @@ def eliminar_usuari(usuari_id: int):
         cursor.execute("DELETE FROM usuari WHERE id = %s", (usuari_id,))
         db.commit()
         return {"message": "Usuari eliminat"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar usuari: {str(e)}")
     finally:
         cursor.close()
         db.close()
 
-# CRUD Llista
+# ---------------- CRUD LLISTA ----------------
 @app.post("/llistes/", response_model=Llista)
 def crear_llista(llista: LlistaCreate):
     try:
         db = get_db_connection()
         cursor = db.cursor()
-        cursor.execute("INSERT INTO llista (titol, descripcio, privada) VALUES (%s, %s, %s)",
-                       (llista.titol, llista.descripcio, llista.privada))
+        cursor.execute("INSERT INTO llista (titol, descripcio, privada, usuari_id) VALUES (%s, %s, %s, %s)",
+                       (llista.titol, llista.descripcio, llista.privada, llista.usuari_id))
         db.commit()
-        llista_id = cursor.lastrowid
-        return {"id": llista_id, **llista.dict()}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear llista: {str(e)}")
+        return {"id": cursor.lastrowid, **llista.dict()}
     finally:
         cursor.close()
         db.close()
@@ -91,11 +79,9 @@ def obtenir_llista(llista_id: int):
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM llista WHERE id = %s", (llista_id,))
         llista = cursor.fetchone()
-        if llista is None:
+        if not llista:
             raise HTTPException(status_code=404, detail="Llista no trobada")
         return llista
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir llista: {str(e)}")
     finally:
         cursor.close()
         db.close()
@@ -106,10 +92,7 @@ def obtenir_totes_les_llistes():
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM llista")
-        llistes = cursor.fetchall()
-        return llistes
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir llistes: {str(e)}")
+        return cursor.fetchall()
     finally:
         cursor.close()
         db.close()
@@ -122,13 +105,11 @@ def eliminar_llista(llista_id: int):
         cursor.execute("DELETE FROM llista WHERE id = %s", (llista_id,))
         db.commit()
         return {"message": "Llista eliminada"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar llista: {str(e)}")
     finally:
         cursor.close()
         db.close()
 
-# CRUD Titol
+# ---------------- CRUD TITOL ----------------
 @app.post("/titols/", response_model=Titol)
 def crear_titol(titol: TitolCreate):
     try:
@@ -137,10 +118,7 @@ def crear_titol(titol: TitolCreate):
         cursor.execute("INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, comentaris, genero, edadRecomendada) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                        (titol.imatge, titol.nom, titol.descripcio, titol.plataformes, titol.rating, titol.comentaris, titol.genero, titol.edadRecomendada))
         db.commit()
-        titol_id = cursor.lastrowid
-        return {"id": titol_id, **titol.dict()}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear títol: {str(e)}")
+        return {"id": cursor.lastrowid, **titol.dict()}
     finally:
         cursor.close()
         db.close()
@@ -152,11 +130,9 @@ def obtenir_titol(titol_id: int):
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM titol WHERE id = %s", (titol_id,))
         titol = cursor.fetchone()
-        if titol is None:
+        if not titol:
             raise HTTPException(status_code=404, detail="Títol no trobat")
         return titol
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir títol: {str(e)}")
     finally:
         cursor.close()
         db.close()
@@ -167,10 +143,7 @@ def obtenir_tots_els_titols():
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM titol")
-        titols = cursor.fetchall()
-        return titols
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtenir títols: {str(e)}")
+        return cursor.fetchall()
     finally:
         cursor.close()
         db.close()
@@ -183,13 +156,11 @@ def eliminar_titol(titol_id: int):
         cursor.execute("DELETE FROM titol WHERE id = %s", (titol_id,))
         db.commit()
         return {"message": "Títol eliminat"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar títol: {str(e)}")
     finally:
         cursor.close()
         db.close()
 
-# DELETE Títol de Llista (afegit)
+# ---------------- RELACIÓ LLISTA-TITOL ----------------
 @app.delete("/llistes/{llista_id}/titols/{titol_id}")
 def eliminar_titol_de_llista(llista_id: int, titol_id: int):
     try:
@@ -198,10 +169,8 @@ def eliminar_titol_de_llista(llista_id: int, titol_id: int):
         cursor.execute("DELETE FROM llista_titols WHERE llista_id = %s AND titol_id = %s", (llista_id, titol_id))
         db.commit()
         if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Relació no trobada entre la llista i el títol")
+            raise HTTPException(status_code=404, detail="Relació no trobada")
         return {"message": "Títol eliminat de la llista"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar títol de la llista: {str(e)}")
     finally:
         cursor.close()
         db.close()
