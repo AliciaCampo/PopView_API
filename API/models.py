@@ -37,6 +37,9 @@ class Titol(BaseModel):
     comentaris: Optional[str] = None
     genero: Optional[str] = None
     edadRecomendada: Optional[int] = None
+
+    class Config:
+        orm_mode = True  # Permite trabajar con los objetos de SQLAlchemy o consultas directas
 class TitolCreate(BaseModel):
     imatge: Optional[str] = None
     nom: str

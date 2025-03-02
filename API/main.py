@@ -83,7 +83,7 @@ def crear_llista(llista: LlistaCreate):
     finally:
         cursor.close()
         db.close()
-@app.post("/llistes/{llista_id}/titols/", response_model=dict)
+@app.post("/llistes/{llista_id}/titols/{titol_id}", response_model=dict)
 def afegir_titol_a_llista(llista_id: int, titol_id: int):
     try:
         db = get_db_connection()
@@ -91,16 +91,19 @@ def afegir_titol_a_llista(llista_id: int, titol_id: int):
 
         # Verificar si la lista y el título existen
         cursor.execute("SELECT * FROM llista WHERE id = %s", (llista_id,))
-        llista = cursor.fetchone()
-        if llista is None:
+        if cursor.fetchone() is None:
             raise HTTPException(status_code=404, detail="Llista no trobada")
 
         cursor.execute("SELECT * FROM titol WHERE id = %s", (titol_id,))
-        titol = cursor.fetchone()
-        if titol is None:
+        if cursor.fetchone() is None:
             raise HTTPException(status_code=404, detail="Títol no trobat")
 
-        # Añadir el título a la lista
+        # Verificar si el título ya está en la lista
+        cursor.execute("SELECT * FROM llista_titol WHERE llista_id = %s AND titol_id = %s", (llista_id, titol_id))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="El títol ja està en la llista")
+
+        # Insertar el título en la lista
         cursor.execute("INSERT INTO llista_titol (llista_id, titol_id) VALUES (%s, %s)", (llista_id, titol_id))
         db.commit()
 
@@ -163,6 +166,33 @@ def obtenir_totes_les_llistes():
         return llistes
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtenir llistes: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+@app.get("/llistes/{llista_id}/titols", response_model=List[Titol])
+def obtenir_titols_de_llista(llista_id: int):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+
+        # Realizamos un JOIN entre llista_titol y titol, y filtramos por llista_id
+        cursor.execute("""
+            SELECT t.*
+            FROM titol t
+            JOIN llista_titol lt ON t.id = lt.titol_id
+            WHERE lt.llista_id = %s
+        """, (llista_id,))
+        
+        titols = cursor.fetchall()
+
+        if not titols:
+            raise HTTPException(status_code=404, detail="No s'han trobat títols per aquesta llista")
+
+        return titols
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtenir els títols de la llista: {str(e)}")
+    
     finally:
         cursor.close()
         db.close()
