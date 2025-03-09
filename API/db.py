@@ -33,7 +33,9 @@ CREATE_TABLES = {
             id INT AUTO_INCREMENT PRIMARY KEY,
             titol VARCHAR(255) NOT NULL,
             descripcio TEXT,
-            privada BOOLEAN NOT NULL
+            privada BOOLEAN NOT NULL,
+            usuari_id INT,  -- Relación con usuari
+            FOREIGN KEY (usuari_id) REFERENCES usuari(id) ON DELETE CASCADE
         )
     """,
     "titol": """

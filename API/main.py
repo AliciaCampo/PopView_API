@@ -118,18 +118,33 @@ def actualitzar_usuari(usuari_id: int, usuari_update: UsuariUpdate):
 @app.post("/llistes/", response_model=Llista)
 def crear_llista(llista: LlistaCreate):
     try:
+        # Verificar si el usuario existe
         db = get_db_connection()
         cursor = db.cursor()
-        cursor.execute("INSERT INTO llista (titol, descripcio, privada) VALUES (%s, %s, %s)",
-                       (llista.titol, llista.descripcio, llista.privada))
+        cursor.execute("SELECT * FROM usuari WHERE id = %s", (llista.usuari_id,))
+        usuari = cursor.fetchone()
+
+        if not usuari:
+            raise HTTPException(status_code=404, detail="Usuari no trobat")
+
+        # Insertar la lista asociada al usuario
+        cursor.execute("""
+            INSERT INTO llista (titol, descripcio, privada, usuari_id) 
+            VALUES (%s, %s, %s, %s)
+        """, (llista.titol, llista.descripcio, llista.privada, llista.usuari_id))
         db.commit()
         llista_id = cursor.lastrowid
+
+        # Retornar la lista creada
         return {"id": llista_id, **llista.dict()}
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear llista: {str(e)}")
+    
     finally:
         cursor.close()
         db.close()
+
 @app.post("/llistes/{llista_id}/titols/{titol_id}", response_model=dict)
 def afegir_titol_a_llista(llista_id: int, titol_id: int):
     try:
