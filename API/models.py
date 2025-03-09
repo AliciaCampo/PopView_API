@@ -17,6 +17,10 @@ class UsuariCreate(BaseModel):
     edat: int
     correu: str
     contrasenya: str 
+class UsuariUpdate(BaseModel):
+    nom: Optional[str] = None
+    imatge: Optional[str] = None
+    edat: Optional[int] = None
 class Llista(BaseModel):
     id: int
     titol: str
@@ -27,6 +31,7 @@ class LlistaCreate(BaseModel):
     titol: str
     descripcio: Optional[str] = None
     privada: bool  # No incluye `titols` al momento de crear
+    usuari_id: int
 class Titol(BaseModel):
     id: int
     imatge: Optional[str] = None
