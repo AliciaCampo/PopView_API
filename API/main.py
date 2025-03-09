@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 import mysql.connector
-from models import UsuariCreate, Usuari, UsuariUpdate, LlistaCreate, Llista, TitolCreate, Titol
+from models import UsuariCreate, Usuari, UsuariUpdate, LlistaCreate, Llista, LlistaUpdate, TitolCreate, Titol
 from db import get_db_connection
 from typing import List
 
@@ -177,19 +177,37 @@ def obtenir_llista(llista_id: int):
     finally:
         cursor.close()
         db.close()
-@app.post("/llistes/{llista_id}", response_model=Llista)
-def actualizar_llista(llista_id: int, llista: LlistaCreate):
+@app.put("/llistes/{llista_id}", response_model=Llista)
+def actualizar_llista(llista_id: int, llista_update: LlistaUpdate):
     try:
         db = get_db_connection()
         cursor = db.cursor()
 
-        # Actualizar la lista en la base de datos
-        cursor.execute("""
-            UPDATE llista
-            SET titol = %s, descripcio = %s, privada = %s
-            WHERE id = %s
-        """, (llista.titol, llista.descripcio, llista.privada, llista_id))
+        fields = []
+        values = []
+
+        if llista_update.titol is not None:
+            fields.append("titol = %s")
+            values.append(llista_update.titol)
+
+        if llista_update.descripcio is not None:
+            fields.append("descripcio = %s")
+            values.append(llista_update.descripcio)
+
+        if llista_update.privada is not None:
+            fields.append("privada = %s")
+            values.append(llista_update.privada)
+
+        if not fields:
+            raise HTTPException(status_code=400, detail="No hi ha camps per actualitzar")
+
+        values.append(llista_id)
+        query = f"UPDATE llista SET {', '.join(fields)} WHERE id = %s"
+        cursor.execute(query, tuple(values))
         db.commit()
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Llista no trobada")
 
         # Obtener la lista actualizada
         cursor.execute("SELECT * FROM llista WHERE id = %s", (llista_id,))

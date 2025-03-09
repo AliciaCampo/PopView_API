@@ -27,6 +27,10 @@ class Llista(BaseModel):
     descripcio: Optional[str] = None
     privada: bool
     titols: List[int] = []
+class LlistaUpdate(BaseModel):
+    titol: Optional[str] = None
+    descripcio: Optional[str] = None
+    privada: Optional[bool] = None
 class LlistaCreate(BaseModel):
     titol: str
     descripcio: Optional[str] = None
