@@ -21,6 +21,8 @@ class UsuariUpdate(BaseModel):
     nom: Optional[str] = None
     imatge: Optional[str] = None
     edat: Optional[int] = None
+    correu: Optional[str] = None
+    contrasenya: Optional[str] = None
 class Llista(BaseModel):
     id: int
     titol: str

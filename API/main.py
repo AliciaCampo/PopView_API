@@ -94,6 +94,14 @@ def actualitzar_usuari(usuari_id: int, usuari_update: UsuariUpdate):
             fields.append("edat = %s")
             values.append(usuari_update.edat)
 
+        if usuari_update.correu is not None:
+            fields.append("correu = %s")
+            values.append(usuari_update.correu)
+
+        if usuari_update.contrasenya is not None:
+            fields.append("contrasenya = %s")
+            values.append(usuari_update.contrasenya)
+
         if not fields:
             raise HTTPException(status_code=400, detail="No hi ha camps per actualitzar")
 
@@ -105,7 +113,12 @@ def actualitzar_usuari(usuari_id: int, usuari_update: UsuariUpdate):
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Usuari no trobat")
 
-        return {"message": "Usuari actualitzat correctament"}
+        # Retornar el usuario actualizado
+        cursor.execute("SELECT * FROM usuari WHERE id = %s", (usuari_id,))
+        usuari_actualitzat = cursor.fetchone()
+
+        return usuari_actualitzat
+
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Error de base de dades: {err}")
     finally:
@@ -120,19 +133,19 @@ def crear_llista(llista: LlistaCreate):
     try:
         db = get_db_connection()
         cursor = db.cursor()
-        
+
         # Verificar que el usuario existe
         cursor.execute("SELECT * FROM usuari WHERE id = %s", (llista.usuari_id,))
         usuari = cursor.fetchone()
 
         if not usuari:
             raise HTTPException(status_code=404, detail="Usuari no trobat")
-        
+
         # Crear la lista
         cursor.execute("""
-            INSERT INTO llista (titol, descripcio, privada, usuari_id) 
-            VALUES (%s, %s, %s, %s)
-        """, (llista.titol, llista.descripcio, llista.privada, llista.usuari_id))
+            INSERT INTO llista (titol, descripcio, privada)
+            VALUES (%s, %s, %s)
+        """, (llista.titol, llista.descripcio, llista.privada))
         db.commit()
         llista_id = cursor.lastrowid
 
@@ -144,10 +157,10 @@ def crear_llista(llista: LlistaCreate):
         db.commit()
 
         return {"id": llista_id, **llista.dict()}
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear llista: {str(e)}")
-    
+
     finally:
         cursor.close()
         db.close()
@@ -199,6 +212,28 @@ def obtenir_llista(llista_id: int):
     finally:
         cursor.close()
         db.close()
+
+@app.get("/usuaris/{usuari_id}/llistes", response_model=List[Llista])
+def obtenir_llistes_per_usuari(usuari_id: int):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT l.*
+            FROM llista l
+            JOIN usuari_llista ul ON l.id = ul.llista_id
+            WHERE ul.usuari_id = %s
+        """, (usuari_id,))
+        llistes = cursor.fetchall()
+        if not llistes:
+            raise HTTPException(status_code=404, detail="No s'han trobat llistes per aquest usuari")
+        return llistes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtenir llistes per usuari: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+
 @app.put("/llistes/{llista_id}", response_model=Llista)
 def actualizar_llista(llista_id: int, llista_update: LlistaUpdate):
     try:
@@ -256,6 +291,7 @@ def obtenir_totes_les_llistes():
     finally:
         cursor.close()
         db.close()
+
 @app.get("/llistes/{llista_id}/titols", response_model=List[Titol])
 def obtenir_titols_de_llista(llista_id: int):
     try:
@@ -269,7 +305,7 @@ def obtenir_titols_de_llista(llista_id: int):
             JOIN llista_titol lt ON t.id = lt.titol_id
             WHERE lt.llista_id = %s
         """, (llista_id,))
-        
+
         titols = cursor.fetchall()
 
         if not titols:
@@ -279,7 +315,7 @@ def obtenir_titols_de_llista(llista_id: int):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtenir els títols de la llista: {str(e)}")
-    
+
     finally:
         cursor.close()
         db.close()
@@ -305,15 +341,15 @@ def crear_titol(titol: TitolCreate):
         cursor = db.cursor()
 
         cursor.execute("""
-            INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, comentaris, genero, edadRecomendada) 
+            INSERT INTO titol (imatge, nom, descripcio, plataformes, rating, comentaris, genero, edadRecomendada)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (
-            titol.imatge or None, 
-            titol.nom, 
-            titol.descripcio or None, 
-            titol.plataformes, 
-            titol.rating, 
-            titol.comentaris or None, 
+            titol.imatge or None,
+            titol.nom,
+            titol.descripcio or None,
+            titol.plataformes,
+            titol.rating,
+            titol.comentaris or None,
             titol.genero or None,
             titol.edadRecomendada or None
         ))
@@ -321,10 +357,10 @@ def crear_titol(titol: TitolCreate):
         db.commit()
         titol_id = cursor.lastrowid
         return {"id": titol_id, **titol.dict()}
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear títol: {str(e)}")
-    
+
     finally:
         if cursor:
             cursor.close()
@@ -374,10 +410,10 @@ def eliminar_titol(titol_id: int):
             raise HTTPException(status_code=404, detail="Títol no trobat")
 
         return {"message": "Títol eliminat correctament"}
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al eliminar títol: {str(e)}")
-    
+
     finally:
         if cursor:
             cursor.close()
