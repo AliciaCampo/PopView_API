@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 import mysql.connector
-from models import UsuariCreate, Usuari, UsuariUpdate, LlistaCreate, Llista, LlistaUpdate, TitolCreate, Titol
+from models import UsuariCreate, Usuari, UsuariUpdate, LlistaCreate, Llista, LlistaUpdate, TitolCreate, Titol, ComentarioCreate, ComentarioUpdate, RatingUpdate
 from db import get_db_connection
 from typing import List
 
@@ -397,3 +397,97 @@ def eliminar_usuari(usuari_id: int):
             cursor.close()
         if db:
             db.close()
+@app.post("/usuaris/{usuari_id}/titols/{titol_id}/comentarios/")
+def agregar_comentario(usuari_id: int, titol_id: int, comentario: ComentarioCreate):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO usuari_titol (usuari_id, titol_id, comentaris, rating)
+            VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE comentaris = VALUES(comentaris), rating = VALUES(rating)
+        """, (usuari_id, titol_id, comentario.comentario, comentario.rating))
+        db.commit()
+        return {"message": "Comentario y valoración añadidos"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al añadir comentario: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+
+@app.put("/usuaris/{usuari_id}/titols/{titol_id}/comentarios/")
+def modificar_comentario(usuari_id: int, titol_id: int, comentario: ComentarioUpdate):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        fields = []
+        values = []
+        if comentario.comentario is not None:
+            fields.append("comentaris = %s")
+            values.append(comentario.comentario)
+        if comentario.rating is not None:
+            fields.append("rating = %s")
+            values.append(comentario.rating)
+        if not fields:
+            raise HTTPException(status_code=400, detail="No hay campos para actualizar")
+        values.append(usuari_id)
+        values.append(titol_id)
+        query = f"UPDATE usuari_titol SET {', '.join(fields)} WHERE usuari_id = %s AND titol_id = %s"
+        cursor.execute(query, tuple(values))
+        db.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Comentario no encontrado")
+        return {"message": "Comentario y valoración modificados"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al modificar comentario: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+
+@app.delete("/usuaris/{usuari_id}/titols/{titol_id}/comentarios/")
+def eliminar_comentario(usuari_id: int, titol_id: int):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE usuari_titol
+            SET comentaris = NULL, rating = 0
+            WHERE usuari_id = %s AND titol_id = %s
+        """, (usuari_id, titol_id))
+        db.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Comentario no encontrado")
+        return {"message": "Comentario eliminado"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar comentario: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+
+@app.put("/usuaris/{usuari_id}/titols/{titol_id}/rating/")
+def actualizar_rating(usuari_id: int, titol_id: int, rating_update: RatingUpdate):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+
+        # Verificar que el rating esté en el rango permitido
+        if rating_update.rating not in [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4]:
+            raise HTTPException(status_code=400, detail="El rating debe estar entre 0 y 4 con incrementos de 0.5")
+
+        cursor.execute("""
+            UPDATE usuari_titol
+            SET rating = %s
+            WHERE usuari_id = %s AND titol_id = %s
+        """, (rating_update.rating, usuari_id, titol_id))
+        db.commit()
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Rating no encontrado")
+
+        return {"message": "Rating actualizado"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar rating: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()

@@ -60,3 +60,13 @@ class TitolCreate(BaseModel):
     comentaris: Optional[str] = None
     genero: Optional[str] = None
     edadRecomendada: Optional[int] = None
+class ComentarioCreate(BaseModel):
+    comentario: str
+    rating: float
+
+class ComentarioUpdate(BaseModel):
+    comentario: Optional[str] = None
+    rating: Optional[float] = None
+
+class RatingUpdate(BaseModel):
+    rating: float
