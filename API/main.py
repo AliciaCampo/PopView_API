@@ -196,6 +196,21 @@ def obtenir_totes_les_llistes():
     finally:
         cursor.close()
         db.close()
+@app.get("/llistes/publicas/", response_model=List[Llista])
+def obtenir_llistes_publicas():
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        # Filtrar las listas donde el campo `privada` es False
+        cursor.execute("SELECT * FROM llista WHERE privada = FALSE")
+        llistes = cursor.fetchall()
+        return llistes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener listas públicas: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+
 @app.get("/usuaris/{usuari_id}/llistes", response_model=List[Llista])
 def obtenir_llistes_per_usuari(usuari_id: int):
     try:
