@@ -429,7 +429,44 @@ def agregar_comentario(usuari_id: int, titol_id: int, comentario: ComentarioCrea
     finally:
         cursor.close()
         db.close()
-
+@app.get("/usuaris/{usuari_id}/titols/{titol_id}/comentarios/")
+def obtener_comentarios(usuari_id: int, titol_id: int):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT comentaris, rating
+            FROM usuari_titol
+            WHERE usuari_id = %s AND titol_id = %s
+        """, (usuari_id, titol_id))
+        comentarios = cursor.fetchall()
+        if not comentarios:
+            raise HTTPException(status_code=404, detail="Comentarios no encontrados")
+        return comentarios
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener comentarios: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+@app.get("/titols/{titol_id}/comentarios/")
+def obtener_todos_los_comentarios(titol_id: int):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT usuari_id, comentaris, rating
+            FROM usuari_titol
+            WHERE titol_id = %s AND comentaris IS NOT NULL
+        """, (titol_id,))
+        comentarios = cursor.fetchall()
+        if not comentarios:
+            raise HTTPException(status_code=404, detail="No hay comentarios para este título")
+        return comentarios
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener comentarios: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
 @app.put("/usuaris/{usuari_id}/titols/{titol_id}/comentarios/")
 def modificar_comentario(usuari_id: int, titol_id: int, comentario: ComentarioUpdate):
     try:
